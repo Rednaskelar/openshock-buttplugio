@@ -26,16 +26,12 @@ export function toggleShockMode() {
 }
 
 export function startSerialServer() {
-  if (!config.serialPort) {
-    console.log("No Serial Port configured. Skipping Serial Emulation.");
-    return;
-  }
 
-  console.log(`Attempting to open Serial Port: ${config.serialPort} (Baud 115200)...`);
+  console.log(`Attempting to open Serial Port: CNCA0 (Baud 115200)...`);
 
   try {
     port = new SerialPort({
-      path: config.serialPort,
+      path: "CNCA0",
       baudRate: 115200,
       autoOpen: false, 
     });
@@ -45,16 +41,20 @@ export function startSerialServer() {
 
     port.open((err: any) => {
       if (err) {
-        console.error(`FAILED to open Serial Port ${config.serialPort}:`, err.message);
+        console.error(`FAILED to open Serial Port CNCA0:`, err.message);
         console.error("Make sure com0com is installed and the port name matches config (default CNCA0).");
       } else {
-        console.log(`Serial Port ${config.serialPort} OPEN! Emulating Lovense Lush 2 (Single Slider Mode).`);
+        console.log(`Serial Port CNCA0 OPEN! Emulating Lovense Lush 2 (Single Slider Mode).`);
       }
     });
 
     // Handle generic errors
-    port.on("error", (err: any) => {
-      console.error("Serial Port Error:", err.message);
+    port.on("error", function (err: any) {
+      console.error(`Error opening CNCA0: `, err.message);
+    });
+
+    port.on("open", function () {
+      console.log(`Serial Port CNCA0 Open! Ready for Intiface at CNCB0.`);
     });
 
     parser.on("data", (data: Buffer) => {
@@ -145,16 +145,15 @@ let previousVibrate = -1;
 let previousShock = -1;
 // let lastSendTime = 0; // Not needed for continuous mode
 
-function sendLoop() {
-  // Loop runs every 100ms (10Hz) to avoid Rate Limits.
-  // Duration is 110ms to ensure overlap/continuity.
+function sendLoop(duration: number) {
+  // Loop duration is passed in.
 
   // Vibrate
   if (lastVibrate > 0) {
        // Continuous send
        const level = getInRange(lastVibrate);
        if (Math.round(level) > 0) {
-           sendOpenShockCommand("Vibrate", Math.round(level), 110); 
+           sendOpenShockCommand("Vibrate", Math.round(level), duration); 
        }
   } 
   
@@ -163,12 +162,19 @@ function sendLoop() {
   if (lastShock > 0) {
         const level = getInRange(lastShock);
         if (Math.round(level) > 0) {
-            sendOpenShockCommand("Shock", Math.round(level), 110);
+            sendOpenShockCommand("Shock", Math.round(level), duration);
         }
   }
 }
 
 export function initSerialPersist() {
-   // 10Hz loop which is safe for serial
-   setInterval(sendLoop, 100); 
+   // Check if we are using Serial Hub or API
+   const useSerial = !!config.hubPort; // If hubPort is set, we are using serial.
+   
+   const interval = useSerial ? 100 : 1000;
+   const duration = useSerial ? 110 : 1100;
+   
+   console.log(`[Persist] Starting Control Loop: Interval ${interval}ms, Duration ${duration}ms (${useSerial ? "Serial Mode" : "API Mode"})`);
+
+   setInterval(() => sendLoop(duration), interval); 
 }

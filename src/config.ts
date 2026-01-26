@@ -10,7 +10,6 @@ interface iConfig {
   openShockToken: string;
   openShockUrl: string;
   shockerId: string;
-  serialPort: string;
   hubPort: string; // OpenShock Hub Serial
   shockerModel: number;
   rfId: number;
@@ -44,7 +43,6 @@ class Config implements iConfig {
   public openShockUrl: string = "https://api.openshock.app";
   public shockerId: string = "";
   public shockerModel: number = 0; // Default to CaiXianlin (0)
-  public serialPort: string = "CNCA0";
   public hubPort: string = ""; 
   public rfId: number = 0;
   public shockMode: boolean = false; // Default: Vibrate
@@ -60,7 +58,6 @@ class Config implements iConfig {
       openShockToken: this.openShockToken,
       openShockUrl: this.openShockUrl,
       shockerId: this.shockerId,
-      serialPort: this.serialPort,
       hubPort: this.hubPort,
       shockerModel: this.shockerModel,
       rfId: this.rfId,
@@ -77,7 +74,6 @@ class Config implements iConfig {
         if (read.openShockToken) this.openShockToken = read.openShockToken;
         if (read.openShockUrl) this.openShockUrl = read.openShockUrl;
         if (read.shockerId) this.shockerId = read.shockerId;
-        if (read.serialPort) this.serialPort = read.serialPort;
         if (read.hubPort) this.hubPort = read.hubPort;
         if (read.shockerModel !== undefined) this.shockerModel = read.shockerModel;
         if (read.rfId) this.rfId = read.rfId;
