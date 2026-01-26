@@ -1,5 +1,5 @@
 {
-  "name": "pishock-buttplugio",
+  "name": "openshock-buttplugio",
   "description": "PiShock for buttplug.io",
   "homepage": "https://github.com/lillithkt/pishock-buttplugio",
   "main": "dist/index.js",

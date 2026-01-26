@@ -21,7 +21,7 @@ export async function runFirstDebugCommands() {
 //   if (process.argv.includes("--shock")) await shockDebug();
 // }
 export default async function runDebugCommands() {
-    console.log("Debug commands disabled in this version.");
+    // console.log("Debug commands disabled in this version.");
 }
 
 function sendHelpCommand() {

@@ -25,28 +25,31 @@ export function toggleShockMode() {
     console.log(`[Mode Switch] Slider 1 is now: ${shockMode ? "SHOCK" : "VIBRATE"}`);
 }
 
-export function startSerialServer() {
+export function startSerialServer(): Promise<void> {
+  return new Promise((resolve) => {
+      console.log(`Attempting to open Serial Port: CNCA0 (Baud 115200)...`);
 
-  console.log(`Attempting to open Serial Port: CNCA0 (Baud 115200)...`);
+      try {
+        port = new SerialPort({
+          path: "CNCA0",
+          baudRate: 115200,
+          autoOpen: false, 
+        });
 
-  try {
-    port = new SerialPort({
-      path: "CNCA0",
-      baudRate: 115200,
-      autoOpen: false, 
-    });
+        // Lovense commands end with ';'
+        const parser = port.pipe(new ReadlineParser({ delimiter: ';' }));
 
-    // Lovense commands end with ';'
-    const parser = port.pipe(new ReadlineParser({ delimiter: ';' }));
-
-    port.open((err: any) => {
-      if (err) {
-        console.error(`FAILED to open Serial Port CNCA0:`, err.message);
-        console.error("Make sure com0com is installed and the port name matches config (default CNCA0).");
-      } else {
-        console.log(`Serial Port CNCA0 OPEN! Emulating Lovense Lush 2 (Single Slider Mode).`);
-      }
-    });
+        port.open((err: any) => {
+          if (err) {
+            console.error(`FAILED to open Serial Port CNCA0:`, err.message);
+            console.error("Make sure com0com is installed and the port name matches config (default CNCA0).");
+            // Resolve anyway to let app continue
+            resolve();
+          } else {
+            console.log(`Serial Port CNCA0 OPEN! Emulating Lovense Lush 2 (Single Slider Mode).`);
+            resolve();
+          }
+        });
 
     // Handle generic errors
     port.on("error", function (err: any) {
@@ -67,6 +70,7 @@ export function startSerialServer() {
   } catch (e: any) {
     console.error("Critical Error creating SerialPort:", e.message);
   }
+  }); 
 }
 
 function handleLovenseCommand(line: string) {
@@ -140,8 +144,6 @@ export function getInRange(value: number) {
   return config.min + (value / 100) * (config.max - config.min);
 }
 
-// Main State Loop
-let previousVibrate = -1;
 let previousShock = -1;
 // let lastSendTime = 0; // Not needed for continuous mode
 

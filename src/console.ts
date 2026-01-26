@@ -5,8 +5,19 @@ import { getInRange, toggleShockMode } from "./serial/serial_server";
 
 const commands: Record<string, (args: string[]) => void> = {
   help: () => {
-    console.log("# Commands:");
-    Object.keys(commands).map((i) => console.log("- " + i));
+    console.log("\n# Available Commands:");
+    console.log("- setup         : Run the interactive configuration wizard.");
+    console.log("- switch        : Toggle the slider mode between VIBRATE (Linear) and SHOCK.");
+    console.log("- model <0-2>   : Set Hub Shocker Model (0=CaiXianlin, 1=Petrainer).");
+    console.log("- rfid <id>     : Set the internal RF ID for the Hub.");
+    console.log("- hubport <COM> : Set the OpenShock Hub Serial Port (e.g. COM30).");
+    console.log("- token <str>   : Set OpenShock API Token (API Mode).");
+    console.log("- shocker <id>  : Set OpenShock Shocker ID (API Mode).");
+    console.log("- min <0-100>   : Set minimum intensity output.");
+    console.log("- max <0-100>   : Set maximum intensity output.");
+    console.log("- dumpconfig    : Display current configuration.");
+    console.log("- testshock     : Send a test shock (10% for 300ms).");
+    console.log("- testvibrate   : Send a test vibration (100% for 2s).");
   },
   dumpconfig: () => {
     console.log(JSON.stringify(config.toJSON()));
@@ -98,19 +109,27 @@ const commands: Record<string, (args: string[]) => void> = {
     toggleShockMode();
   },
   
+  setup: () => {
+      console.log("Starting Setup...");
+      if (rl) rl.close();
+      const { runSetup } = require("./setup");
+      runSetup();
+  }
 } as const;
 
+let rl: any;
+
 export default function runConsole() {
-  const rl = createInterface({
+  rl = createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
-  rl.on("line", (line) => {
+  rl.on("line", (line: string) => {
     const commandName = line.split(" ")[0];
     const command = commands[commandName.toLowerCase()];
     if (!command) console.error("Command Not Found!");
-    command(line.split(" ").slice(1));
+    else command(line.split(" ").slice(1));
   });
 
   commands.help([]);
