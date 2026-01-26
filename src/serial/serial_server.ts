@@ -133,7 +133,7 @@ function handleLovenseCommand(line: string) {
     }
 }
 
-function getInRange(value: number) {
+export function getInRange(value: number) {
   return config.min + (value / 100) * (config.max - config.min);
 }
 

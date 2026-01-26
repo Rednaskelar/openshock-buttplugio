@@ -22,7 +22,6 @@
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.22.0",
     "@types/node": "^22.13.10",
-    "@types/ws": "^8.18.0",
     "esbuild": "^0.25.1",
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
@@ -36,10 +35,7 @@
     "vitest": "^3.0.9"
   },
   "dependencies": {
-    "@types/express": "^5.0.6",
-    "express": "^5.2.1",
-    "serialport": "^13.0.0",
-    "ws": "^8.18.1"
+    "serialport": "^13.0.0"
   },
   "pkg": {
     "scripts": "dist/**/*.js",

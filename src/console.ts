@@ -1,9 +1,7 @@
-import { getInRange } from "buttplug";
-// import editIntifaceConfig from "buttplug/addconfig";
 import config from "config";
 import { createInterface } from "readline";
 import { sendOpenShockCommand } from "./openshock";
-import { toggleShockMode } from "./serial/serial_server";
+import { getInRange, toggleShockMode } from "./serial/serial_server";
 
 const commands: Record<string, (args: string[]) => void> = {
   help: () => {
