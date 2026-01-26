@@ -14,6 +14,7 @@ interface iConfig {
   hubPort: string; // OpenShock Hub Serial
   shockerModel: number;
   rfId: number;
+  shockMode: boolean;
 }
 
 function getConfigDir(): string {
@@ -46,6 +47,7 @@ class Config implements iConfig {
   public serialPort: string = "CNCA0";
   public hubPort: string = ""; 
   public rfId: number = 0;
+  public shockMode: boolean = false; // Default: Vibrate
 
   constructor() {
     this.load();
@@ -62,6 +64,7 @@ class Config implements iConfig {
       hubPort: this.hubPort,
       shockerModel: this.shockerModel,
       rfId: this.rfId,
+      shockMode: this.shockMode,
     };
   }
 
@@ -78,6 +81,7 @@ class Config implements iConfig {
         if (read.hubPort) this.hubPort = read.hubPort;
         if (read.shockerModel !== undefined) this.shockerModel = read.shockerModel;
         if (read.rfId) this.rfId = read.rfId;
+        if (read.shockMode !== undefined) this.shockMode = read.shockMode;
       }
     } catch (e) {
       console.error("Error loading config! Using defaults.", e);

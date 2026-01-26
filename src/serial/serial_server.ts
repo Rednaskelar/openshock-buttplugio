@@ -15,10 +15,13 @@ let lastVibrate = 0;
 let lastShock = 0;
 let lastBeep = 0;
 // Swap Mode
-let shockMode = false;
+// Swap Mode
+let shockMode = config.shockMode;
 
 export function toggleShockMode() {
     shockMode = !shockMode;
+    config.shockMode = shockMode;
+    config.save();
     console.log(`[Mode Switch] Slider 1 is now: ${shockMode ? "SHOCK" : "VIBRATE"}`);
 }
 
