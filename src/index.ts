@@ -5,7 +5,7 @@ import { initSerialPersist, startSerialServer } from "./serial/serial_server";
 
 (async () => {
   runFirstDebugCommands();
-  console.log("App Started! Hosting:\n 1. Serial Port Emulation (Lovense Protocol) [Default: CNCA0]");
+  console.log("App Started! Hosting:\n 1. Serial Port Emulation (Lovense Protocol) [Connect Intiface to: CNCB0]");
 
   runDebugCommands();
 

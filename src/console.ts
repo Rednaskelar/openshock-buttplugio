@@ -65,16 +65,7 @@ const commands: Record<string, (args: string[]) => void> = {
   },
 
 // Removed wifi, restart commands
-  lovenseport: (args) => {
-    if (!args.length)
-      return console.log(
-        "Sets the port for the Lovense Emulation Server (Default 54817). You must restart Intiface after changing this."
-      );
-    config.lovensePort = Number(args[0]);
-    config.save();
-    // editIntifaceConfig();
-    console.log("Lovense Port set to " + config.lovensePort);
-  },
+// Removed wifi, restart, lovenseport commands
   
   hubport: (args) => {
     if (!args[0]) return console.error("Usage: hubport COM30 (or set to 'off' to disable)");
