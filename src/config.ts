@@ -1,17 +1,21 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path, { join } from "path";
-import { SerialOperateEnum } from "serial/types/operate";
+// Removed SerialOperateEnum import
 
 import os from "os";
 
 interface iConfig {
   min: number;
   max: number;
-  type: SerialOperateEnum;
-  wifiSSID: string | null;
-  wifiPass: string | null;
-  buttplugIP: string;
+  openShockToken: string;
+  openShockUrl: string;
+  shockerId: string;
+  lovensePort: number;
   shockerNames: Record<number, string>;
+  serialPort: string;
+  hubPort: string; // OpenShock Hub Serial
+  shockerModel: number;
+  rfId: number;
 }
 
 function getConfigDir(): string {
@@ -36,12 +40,17 @@ function getConfigDir(): string {
 class Config implements iConfig {
   private path: string = getConfigDir();
   public min: number = 0;
-  public max: number = 0;
-  public type: SerialOperateEnum = SerialOperateEnum.VIBRATE;
-  public wifiSSID: string | null = null;
-  public wifiPass: string | null = null;
-  public buttplugIP: string = "127.0.0.1";
+  public max: number = 100;
+  public openShockToken: string = "";
+  public openShockUrl: string = "https://api.openshock.app";
+  public shockerId: string = "";
+  public shockerModel: number = 1;
+  public lovensePort: number = 54817;
+  public serialPort: string = "CNCA0";
   public shockerNames: Record<number, string> = {};
+  public hubPort: string = ""; 
+  public rfId: number = 0;
+
   constructor() {
     this.load();
   }
@@ -50,11 +59,15 @@ class Config implements iConfig {
     return {
       min: this.min,
       max: this.max,
-      type: this.type,
-      wifiSSID: this.wifiSSID,
-      wifiPass: this.wifiPass,
-      buttplugIP: this.buttplugIP,
+      openShockToken: this.openShockToken,
+      openShockUrl: this.openShockUrl,
+      shockerId: this.shockerId,
+      lovensePort: this.lovensePort,
+      serialPort: this.serialPort,
       shockerNames: this.shockerNames,
+      hubPort: this.hubPort,
+      shockerModel: this.shockerModel,
+      rfId: this.rfId,
     };
   }
 
@@ -64,11 +77,15 @@ class Config implements iConfig {
         const read: iConfig = JSON.parse(readFileSync(this.path, "utf-8"));
         if (read.min) this.min = read.min;
         if (read.max) this.max = read.max;
-        if (read.type) this.type = read.type;
-        if (read.wifiSSID) this.wifiSSID = read.wifiSSID;
-        if (read.wifiPass) this.wifiPass = read.wifiPass;
-        if (read.buttplugIP) this.buttplugIP = read.buttplugIP;
+        if (read.openShockToken) this.openShockToken = read.openShockToken;
+        if (read.openShockUrl) this.openShockUrl = read.openShockUrl;
+        if (read.shockerId) this.shockerId = read.shockerId;
+        if (read.lovensePort) this.lovensePort = read.lovensePort;
+        if (read.serialPort) this.serialPort = read.serialPort;
         if (read.shockerNames) this.shockerNames = read.shockerNames;
+        if (read.hubPort) this.hubPort = read.hubPort;
+        if (read.shockerModel !== undefined) this.shockerModel = read.shockerModel;
+        if (read.rfId) this.rfId = read.rfId;
       }
     } catch (e) {
       console.error("Error loading config! Using defaults.", e);

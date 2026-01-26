@@ -1,32 +1,21 @@
-import { connectButtplug, initPersistTimer } from "buttplug";
-import editIntifaceConfig from "buttplug/addconfig";
 import runDebugCommands, { flags, runFirstDebugCommands } from "debugcommands";
-import { findSerialPort, GlobalPort, sendCommand } from "serial";
-import { SerialCommandEnum } from "serial/types";
 import runConsole from "./console";
+import { startLovenseServer } from "./lovense_connect/index";
+import { initHubSerial } from "./openshock/serial_hub";
+import { initSerialPersist, startSerialServer } from "./serial/serial_server";
 
 (async () => {
   runFirstDebugCommands();
-  if (flags.debugLogs) console.log("Finding serial port...");
-  while (!GlobalPort.port) {
-    try {
-      await findSerialPort();
-    } catch (e) {
-      console.error("Error finding serial port:", e);
-    }
-  }
-  if (flags.debugLogs) console.log("Found serial port:", GlobalPort.portName);
-
-  setInterval(() => {
-    if (GlobalPort.port) sendCommand({ cmd: SerialCommandEnum.INFO });
-  }, 10000);
+  console.log("App Started! Hosting:\n 1. Serial Port Emulation (T-Code v0.3) [Default: CNCA0]\n 2. Lovense Connect Discovery (HTTP 20010)");
 
   runDebugCommands();
 
   if (!flags.shouldSuppressConsole) runConsole();
 
-  editIntifaceConfig();
-  connectButtplug();
-
-  initPersistTimer();
+  // editIntifaceConfig(); // DISABLED
+  
+  startLovenseServer();
+  startSerialServer();
+  initSerialPersist();
+  initHubSerial();
 })();

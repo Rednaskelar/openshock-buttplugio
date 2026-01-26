@@ -1,10 +1,9 @@
 import { getInRange } from "buttplug";
-import editIntifaceConfig from "buttplug/addconfig";
+// import editIntifaceConfig from "buttplug/addconfig";
 import config from "config";
 import { createInterface } from "readline";
-import { GlobalPort, sendCommand } from "serial";
-import { SerialCommandEnum } from "serial/types";
-import { SerialOperateEnum } from "serial/types/operate";
+import { sendOpenShockCommand } from "./openshock";
+import { toggleShockMode } from "./serial/serial_server";
 
 const commands: Record<string, (args: string[]) => void> = {
   help: () => {
@@ -35,98 +34,81 @@ const commands: Record<string, (args: string[]) => void> = {
     console.log("Input: " + val + ". Output: " + inRange);
   },
 
-  vibrate: () => {
-    config.type = SerialOperateEnum.VIBRATE;
+  token: (args) => {
+    if (!args[0]) console.error("Please provide your OpenShock Token!");
+    config.openShockToken = args[0];
     config.save();
-    console.log("Intiface will now vibrate");
+    console.log("Token saved.");
   },
-  shock: () => {
-    config.type = SerialOperateEnum.SHOCK;
+  shocker: (args) => {
+    if (!args[0]) console.error("Please provide your OpenShock Shocker ID!");
+    config.shockerId = args[0];
     config.save();
-    console.log("Intiface will now shock!");
+    console.log("Shocker ID saved: " + args[0]);
+    console.log("Shocker ID saved: " + args[0]);
+  },
+  
+  model: (args) => {
+    if (!args[0]) return console.error("Usage: model <0|1|2> (0=CaiXianlin, 1=Petrainer, 2=Petrainer998DR)");
+    const m = parseInt(args[0]);
+    if (isNaN(m)) return console.error("Model must be a number!");
+    config.shockerModel = m;
+    config.save();
+    console.log(`Shocker Model set to ${m}`);
   },
 
-  wifi: (args) => {
-    if (args.length !== 2)
-      return console.error("Please input a wifi name and password");
-    config.wifiSSID = args[0];
-    config.wifiPass = args[1];
-    config.save();
-    console.log(
-      "Registered a new wifi network. This will be added when the pishock resets it."
-    );
+  rfid: (args) => {
+      if (!args[0]) return console.error("Usage: rfid <number> (e.g. 50685)");
+      const id = parseInt(args[0]);
+      if (isNaN(id)) return console.error("ID must be a number!");
+      config.rfId = id;
+      config.save();
+      console.log(`RF ID set to ${id}`);
   },
 
-  restart: () => {
-    console.log("Restarting PiShock...");
-    sendCommand({ cmd: SerialCommandEnum.RESTART });
-  },
-
-  buttplugip: (args) => {
+// Removed wifi, restart commands
+  lovenseport: (args) => {
     if (!args.length)
       return console.log(
-        "This command sets the buttplug.io url, for if you are running this on another device"
+        "Sets the port for the Lovense Emulation Server (Default 54817). You must restart Intiface after changing this."
       );
-    config.buttplugIP = args[0];
+    config.lovensePort = Number(args[0]);
     config.save();
-    console.log("Buttplug.io url set to " + config.buttplugIP);
+    // editIntifaceConfig();
+    console.log("Lovense Port set to " + config.lovensePort);
   },
-
-  listshockers: () => {
-    console.log("Shockers: ");
-    GlobalPort.info?.shockers.map((i) => {
-      console.log(i.id);
-    });
-  },
-
-  testshock: (args) => {
-    if (!args.length)
-      return console.log(
-        "This command shocks at 10% for 0.3s. Please enter a shocker name from `listshockers`"
-      );
-    sendCommand({
-      cmd: SerialCommandEnum.OPERATE,
-      value: {
-        op: SerialOperateEnum.SHOCK,
-        duration: 300,
-        intensity: 10,
-        id: args[0],
-      },
-    });
-    console.log("Shocking at 10% for 0.3s!");
-  },
-  testvibrate: (args) => {
-    if (!args.length)
-      return console.log(
-        "This command vibrates at 100% for 2s. Please enter a shocker name from `listshockers`"
-      );
-    sendCommand({
-      cmd: SerialCommandEnum.OPERATE,
-      value: {
-        op: SerialOperateEnum.VIBRATE,
-        duration: 2000,
-        intensity: 100,
-        id: args[0],
-      },
-    });
-    console.log("Vibrating at 100% for 2s!");
-  },
-
-  name: (args) => {
-    if (args.length < 2)
-      return console.log(
-        "This command names a shocker. The first argument is the shocker id from `listshockers`, the second is the name"
-      );
-    if (!GlobalPort.info!.shockers.find((i) => i.id === Number(args[0])))
-      return console.log("That shocker does not exist!");
-    const name = args.slice(1).join(" ");
-    config.shockerNames[Number(args[0])] = name;
+  
+  hubport: (args) => {
+    if (!args[0]) return console.error("Usage: hubport COM30 (or set to 'off' to disable)");
+    if (args[0] === "off") {
+        config.hubPort = "";
+        console.log("OpenShock Hub Serial Disabled. Using Web API.");
+    } else {
+        config.hubPort = args[0];
+        console.log("OpenShock Hub Serial set to " + args[0] + ". Restart to apply.");
+    }
     config.save();
-    editIntifaceConfig();
-    console.log(
-      `Shocker ${args[0]} is now named ${name}. Restart your intiface to see the changes!`
-    );
   },
+  
+  hubcmd: (args) => {
+      const { sendRawToHub } = require("./openshock/serial_hub");
+      const cmd = args.join(" ");
+      sendRawToHub(cmd);
+  },
+
+  testshock: () => {
+    console.log("Sending test shock (10%, 300ms)...");
+    sendOpenShockCommand("Shock", 10, 300);
+  },
+  testvibrate: () => {
+    console.log("Sending test vibrate (100%, 2000ms)...");
+    sendOpenShockCommand("Vibrate", 100, 2000);
+  },
+  
+  switch: () => {
+    toggleShockMode();
+  },
+  
 } as const;
 
 export default function runConsole() {
