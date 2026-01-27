@@ -41,7 +41,7 @@ export async function sendOpenShockCommand(
         exclusive: true,
       },
     ],
-    customName: "PiShock-ButtplugIO Bridge",
+    customName: "OpenShock-ButtplugIO Bridge",
   };
 
   try {

@@ -1,6 +1,6 @@
 {
   "name": "openshock-buttplugio",
-  "description": "PiShock for buttplug.io",
+  "description": "OpenShock for buttplug.io",
   "homepage": "https://github.com/lillithkt/pishock-buttplugio",
   "main": "dist/index.js",
   "engines": {
@@ -43,6 +43,6 @@
     "targets": [
       "latest"
     ],
-    "output": "dist/PiShock-ButtplugIO.exe"
+    "output": "dist/OpenShock-ButtplugIO.exe"
   }
 }

@@ -19,27 +19,43 @@ export async function runSetup() {
   
   if (mode.trim().toUpperCase() === "A") {
       console.log("\n--- API Mode ---");
-      const url = await question(`OpenShock URL [${config.openShockUrl}]: `);
-      if(url.trim()) config.openShockUrl = url.trim();
+      const defaultUrl = config.openShockUrl || "https://api.openshock.app";
+      const url = await question(`OpenShock URL [${defaultUrl}]: `);
+      config.openShockUrl = url.trim() || defaultUrl;
 
-      const token = await question(`OpenShock Token [${config.openShockToken ? "***" : ""}]: `);
-      if(token.trim()) config.openShockToken = token.trim();
+      const defaultToken = config.openShockToken;
+      const token = await question(`OpenShock Token [${defaultToken ? "***" : "Empty"}]: `);
+      if (token.trim()) config.openShockToken = token.trim(); // Don't overwrite with empty if it was hidden/masked, unless explicit? Actually, for token, if they press enter, keep existing.
 
-      const shockerId = await question(`Shocker ID [${config.shockerId}]: `);
-      if(shockerId.trim()) config.shockerId = shockerId.trim();
+      const defaultShockerId = config.shockerId;
+      const shockerId = await question(`Shocker ID [${defaultShockerId}]: `);
+      config.shockerId = shockerId.trim() || defaultShockerId;
 
       // Clear Hub Config
       config.hubPort = "";
   } else {
       console.log("\n--- Serial Hub Mode ---");
-      const port = await question(`Hub COM Port (e.g. COM30) [${config.hubPort || "COM30"}]: `);
-      if(port.trim()) config.hubPort = port.trim();
+      const defaultPort = config.hubPort || "COM30";
+      const port = await question(`Hub COM Port (e.g. COM30) [${defaultPort}]: `);
+      config.hubPort = port.trim() || defaultPort;
 
-      const model = await question(`Shocker Model (0=CaiXianlin, 1=Petrainer) [${config.shockerModel}]: `);
-      if(model.trim()) config.shockerModel = parseInt(model.trim());
+      const defaultModel = config.shockerModel; // number
+      const model = await question(`Shocker Model (0=CaiXianlin, 1=Petrainer) [${defaultModel}]: `);
+      const modelInput = model.trim();
+      if (modelInput) {
+          config.shockerModel = parseInt(modelInput);
+      } else {
+          config.shockerModel = defaultModel;
+      }
 
-      const rfid = await question(`RF ID (e.g. 50685) [${config.rfId || "0"}]: `);
-      if(rfid.trim()) config.rfId = parseInt(rfid.trim());
+      const defaultRfId = config.rfId; // number
+      const rfid = await question(`RF ID (e.g. 50685) [${defaultRfId}]: `);
+      const rfidInput = rfid.trim();
+        if (rfidInput) {
+            config.rfId = parseInt(rfidInput);
+        } else {
+            config.rfId = defaultRfId;
+        }
   }
 
   console.log("\nConfiguration Saved!");

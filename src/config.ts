@@ -23,14 +23,14 @@ function getConfigDir(): string {
   if (process.platform === "win32") {
     return path.resolve(
       process.env.APPDATA!,
-      "PiShock-ButtplugIO",
+      "OpenShock-ButtplugIO",
       "config.json"
     );
   }
   return path.join(
     os.homedir(),
     ".config",
-    "PiShock-ButtplugIO",
+    "OpenShock-ButtplugIO",
     "config.json"
   );
 }
