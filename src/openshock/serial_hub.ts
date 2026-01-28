@@ -1,4 +1,3 @@
-
 // @ts-ignore
 const { SerialPort, ReadlineParser } = require("serialport");
 import config from "../config";
@@ -6,49 +5,157 @@ import config from "../config";
 let hubPort: any = null;
 let lastSentCmd: string = "";
 
-export function initHubSerial(): Promise<void> {
-    return new Promise((resolve) => {
-        if (!config.hubPort) {
-            resolve();
-            return;
-        }
+// Helper to look for Hub
+async function findHubPort(): Promise<string | null> {
+    console.log("[OpenShock Hub] Auto-discovering Hub...");
+    let ports: any[] = [];
+    try {
+        ports = await SerialPort.list();
+    } catch (e: any) {
+        console.error("[OpenShock Hub] Failed to list ports:", e.message);
+        return null;
+    }
 
-        console.log(`[OpenShock Hub] Opening Serial Hub on ${config.hubPort}...`);
+    // Filter for likely candidates (CH340, CP210x, standard USB-Serial stuff)
+    // Common vendor IDs:
+    // 10C4 (Silicon Labs), 1A86 (QinHeng), 2341 (Arduino), 0403 (FTDI)
+    const candidates = ports.filter(p => {
+        if (!p.vendorId) return false;
+        const vid = p.vendorId.toUpperCase();
+        return ["10C4", "1A86", "2341", "0403", "303A"].includes(vid);
+    });
+
+    if (candidates.length === 0) {
+        console.log("[OpenShock Hub] No likely candidate ports found.");
+        return null;
+    }
+
+    for (const portInfo of candidates) {
+        console.log(`[OpenShock Hub] Probing ${portInfo.path}...`);
+        const path = portInfo.path;
+        
         try {
-            hubPort = new SerialPort({
-                path: config.hubPort,
-                baudRate: 115200, // Standard ESP32 baud
-                autoOpen: false
-            });
+            const isHub = await probePort(path);
+            if (isHub) {
+                console.log(`[OpenShock Hub] FOUND Hub at ${path}!`);
+                return path;
+            }
+        } catch (e) {
+            console.log(`[OpenShock Hub] Probe failed for ${path}.`);
+        }
+    }
 
-            hubPort.open((err: any) => {
-                if (err) {
-                    console.error(`[OpenShock Hub] Failed to open ${config.hubPort}:`, err.message);
-                    hubPort = null;
-                    resolve();
-                } else {
-                    console.log(`[OpenShock Hub] Connected to Hub on ${config.hubPort}!`);
-                    // Send 'help' to discover commands
-                    setTimeout(() => {
-                        if (hubPort) hubPort.write("help\n");
-                        resolve();
-                    }, 500); // Shorter wait, just enough to not block too long
+    return null;
+}
+
+function probePort(path: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+        const port = new SerialPort({
+            path: path,
+            baudRate: 115200,
+            autoOpen: false
+        });
+
+        const timeout = setTimeout(() => {
+            if (port.isOpen) port.close();
+            resolve(false);
+        }, 3000); // 3 sec timeout
+
+        port.open((err: any) => {
+            if (err) {
+                clearTimeout(timeout);
+                resolve(false); // Can't open, not it
+                return;
+            }
+
+            // Listen for data
+            const parser = port.pipe(new ReadlineParser({ delimiter: '\n' }));
+            parser.on("data", (line: string) => {
+                const trimmed = line.trim();
+                // Check for expected signature
+                if (trimmed.includes("OpenShock") || trimmed.includes("rftransmit") || trimmed.includes("help") || trimmed.includes("Unknown command")) {
+                    clearTimeout(timeout);
+                    port.close((err:any) => {
+                        resolve(true);
+                    });
                 }
             });
 
-        hubPort.on("error", (err: any) => {
-             console.error(`[OpenShock Hub] Error:`, err.message);
+            // Send probe
+            // Wait a tiny bit for connection to settle
+            setTimeout(() => {
+               if(port.isOpen) port.write("\nhelp\n");
+            }, 500);
         });
-
-        const parser = hubPort.pipe(new ReadlineParser({ delimiter: '\n' }));
-        parser.on("data", (line: string) => {
-             // console.log(`[OpenShock Hub RX]: ${line.trim()}`);
+        
+        port.on("error", () => {
+             clearTimeout(timeout);
+             resolve(false);
         });
+    });
+}
 
-    } catch (e: any) {
-        console.error(`[OpenShock Hub] Critical Error:`, e.message);
+
+export async function initHubSerial(): Promise<void> {
+    // 0. Check if disabled (API Mode)
+    if (!config.hubPort) {
+        return;
     }
-    }); // Close Promise
+
+    // 1. Try Configured Port first
+    if (config.hubPort && config.hubPort !== "auto") {
+        console.log(`[OpenShock Hub] Attempting saved port: ${config.hubPort}`);
+        const success = await attemptConnection(config.hubPort);
+        if (success) return;
+        
+        console.warn(`[OpenShock Hub] Saved port ${config.hubPort} failed. Starting auto-discovery...`);
+    }
+
+    // 2. Auto-Discovery
+    const foundPath = await findHubPort();
+    if (foundPath) {
+        console.log(`[OpenShock Hub] Auto-discovery successful! Saving config.`);
+        
+        // Update Config
+        config.hubPort = foundPath;
+        config.save();
+
+        // Connect
+        await attemptConnection(foundPath);
+    } else {
+        console.warn("[OpenShock Hub] Auto-discovery failed. Hub not found.");
+    }
+}
+
+function attemptConnection(path: string): Promise<boolean> {
+     return new Promise((resolve) => {
+        const port = new SerialPort({
+            path: path,
+            baudRate: 115200,
+            autoOpen: false
+        });
+
+        port.open((err: any) => {
+            if (err) {
+                console.error(`[OpenShock Hub] Failed to open ${path}:`, err.message);
+                resolve(false);
+            } else {
+                console.log(`[OpenShock Hub] Connected to Hub on ${path}!`);
+                hubPort = port;
+                
+                hubPort.on("error", (err: any) => {
+                    console.error(`[OpenShock Hub] Error:`, err.message);
+                });
+
+                const parser = hubPort.pipe(new ReadlineParser({ delimiter: '\n' }));
+                parser.on("data", (line: string) => {
+                     // console.log(`[OpenShock Hub RX]: ${line.trim()}`);
+                });
+
+                resolve(true);
+            }
+        });
+     });
 }
 
 export function sendRawToHub(cmd: string) {

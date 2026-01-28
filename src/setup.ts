@@ -35,7 +35,7 @@ export async function runSetup() {
       config.hubPort = "";
   } else {
       console.log("\n--- Serial Hub Mode ---");
-      const defaultPort = config.hubPort || "COM30";
+      const defaultPort = config.hubPort || "auto";
       const port = await question(`Hub COM Port (e.g. COM30) [${defaultPort}]: `);
       config.hubPort = port.trim() || defaultPort;
 
@@ -48,7 +48,7 @@ export async function runSetup() {
           config.shockerModel = defaultModel;
       }
 
-      const defaultRfId = config.rfId; // number
+      const defaultRfId = config.rfId || 50685;
       const rfid = await question(`RF ID (e.g. 50685) [${defaultRfId}]: `);
       const rfidInput = rfid.trim();
         if (rfidInput) {
