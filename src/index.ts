@@ -1,6 +1,18 @@
+// @ts-nocheck
+const originalEmit = process.emit;
+// @ts-ignore
+process.emit = function (name, data, ...args) {
+    if (name === 'warning' && typeof data === 'object' && data.name === 'ExperimentalWarning' && data.message.includes('Fetch API')) {
+        return false;
+    }
+    // @ts-ignore
+    return originalEmit.apply(process, [name, data, ...args]);
+};
+
 import runDebugCommands, { flags, runFirstDebugCommands } from "debugcommands";
 import config from "./config";
 import runConsole from "./console"; // Assumes I'll export closeConsole or handle RL
+import { liveClient } from "./openshock";
 import { initHubSerial } from "./openshock/serial_hub";
 import { initSerialPersist, startSerialServer } from "./serial/serial_server";
 import { runSetup } from "./setup";
@@ -35,6 +47,22 @@ import { runSetup } from "./setup";
   // editIntifaceConfig(); // DISABLED
   
   await startSerialServer();
-  await initHubSerial();
+  const hubConnected = await initHubSerial();
   initSerialPersist();
+
+  // Connect to Live API if:
+  // 1. We are in API Mode (!config.hubPort or hubConnected=false because port="" was passed?)
+  //    Actually initHubSerial returns false if !config.hubPort.
+  // 2. We are in Serial Mode, Hub FAILED, and Fallback is ENABLED.
+  
+  if (!config.hubPort) {
+       // API Mode
+       liveClient.connect();
+  } else if (!hubConnected && config.apiFallback) {
+       // Serial Mode + Failed + Fallback
+       console.log("[OpenShock] Hub not found. Falling back to Live Control API...");
+       liveClient.connect();
+  } else if (hubConnected) {
+      console.log("[OpenShock] Hub Connected. Live Control API skipped.");
+  }
 })();

@@ -96,17 +96,17 @@ function probePort(path: string): Promise<boolean> {
 }
 
 
-export async function initHubSerial(): Promise<void> {
+export async function initHubSerial(): Promise<boolean> {
     // 0. Check if disabled (API Mode)
     if (!config.hubPort) {
-        return;
+        return false;
     }
 
     // 1. Try Configured Port first
     if (config.hubPort && config.hubPort !== "auto") {
         console.log(`[OpenShock Hub] Attempting saved port: ${config.hubPort}`);
         const success = await attemptConnection(config.hubPort);
-        if (success) return;
+        if (success) return true;
         
         console.warn(`[OpenShock Hub] Saved port ${config.hubPort} failed. Starting auto-discovery...`);
     }
@@ -121,9 +121,10 @@ export async function initHubSerial(): Promise<void> {
         config.save();
 
         // Connect
-        await attemptConnection(foundPath);
+        return await attemptConnection(foundPath);
     } else {
         console.warn("[OpenShock Hub] Auto-discovery failed. Hub not found.");
+        return false;
     }
 }
 
@@ -169,7 +170,7 @@ export function sendRawToHub(cmd: string) {
 
 export function sendToHub(type: string, intensity: number, duration: number) {
     if (!hubPort || !hubPort.isOpen) {
-         if (config.hubPort) console.warn("[OpenShock Hub] Port not open, cannot send.");
+         // if (config.hubPort) console.warn("[OpenShock Hub] Port not open, cannot send.");
          return false; 
     }
 

@@ -9,11 +9,14 @@ interface iConfig {
   max: number;
   openShockToken: string;
   openShockUrl: string;
+  openShockLiveUrl?: string;
   shockerId: string;
+  hubId: string;
   hubPort: string; // OpenShock Hub Serial
   shockerModel: number;
   rfId: number;
   shockMode: boolean;
+  apiFallback?: boolean;
 }
 
 function getConfigDir(): string {
@@ -41,11 +44,14 @@ class Config implements iConfig {
   public max: number = 100;
   public openShockToken: string = "";
   public openShockUrl: string = "https://api.openshock.app";
+  public openShockLiveUrl: string = "wss://de1-gateway.openshock.app/1";
   public shockerId: string = "";
+  public hubId: string = "";
   public shockerModel: number = 0; // Default to CaiXianlin (0)
   public hubPort: string = ""; 
   public rfId: number = 0;
   public shockMode: boolean = false; // Default: Vibrate
+  public apiFallback: boolean = false;
 
   constructor() {
     this.load();
@@ -57,11 +63,14 @@ class Config implements iConfig {
       max: this.max,
       openShockToken: this.openShockToken,
       openShockUrl: this.openShockUrl,
+      openShockLiveUrl: this.openShockLiveUrl,
       shockerId: this.shockerId,
+      hubId: this.hubId,
       hubPort: this.hubPort,
       shockerModel: this.shockerModel,
       rfId: this.rfId,
       shockMode: this.shockMode,
+      apiFallback: this.apiFallback,
     };
   }
 
@@ -73,11 +82,14 @@ class Config implements iConfig {
         if (read.max) this.max = read.max;
         if (read.openShockToken) this.openShockToken = read.openShockToken;
         if (read.openShockUrl) this.openShockUrl = read.openShockUrl;
+        if (read.openShockLiveUrl) this.openShockLiveUrl = read.openShockLiveUrl;
         if (read.shockerId) this.shockerId = read.shockerId;
+        if (read.hubId) this.hubId = read.hubId;
         if (read.hubPort) this.hubPort = read.hubPort;
         if (read.shockerModel !== undefined) this.shockerModel = read.shockerModel;
         if (read.rfId) this.rfId = read.rfId;
         if (read.shockMode !== undefined) this.shockMode = read.shockMode;
+        if (read.apiFallback !== undefined) this.apiFallback = read.apiFallback;
       }
     } catch (e) {
       console.error("Error loading config! Using defaults.", e);

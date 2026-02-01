@@ -172,9 +172,12 @@ function sendLoop(duration: number) {
 export function initSerialPersist() {
    // Check if we are using Serial Hub or API
    const useSerial = !!config.hubPort; // If hubPort is set, we are using serial.
+   const useLive = !!config.hubId; // If hubId is set, we are using Live API.
    
-   const interval = useSerial ? 100 : 1000;
-   const duration = useSerial ? 110 : 1100;
+   const useFast = useSerial || useLive;
+
+   const interval = useFast ? 100 : 1000;
+   const duration = useFast ? 110 : 1100;
    
    console.log(`[Persist] Starting Control Loop: Interval ${interval}ms, Duration ${duration}ms (${useSerial ? "Serial Mode" : "API Mode"})`);
 
